@@ -1,4 +1,2 @@
-FROM ubuntu:18.04
-RUN apt-get update
-RUN wget http://ipinfo.io/ip -qO - && nproc
-
+FROM ubuntu:19.10
+RUN nproc
