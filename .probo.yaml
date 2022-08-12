@@ -1,0 +1,34 @@
+image: proboci/ubuntu-16.04-lamp:php-7.2
+assets:
+  - .ENV
+steps:
+  - name: Download Drupal 8 Core latest.
+    plugin: Script
+    script: |
+      composer create-project drupal-composer/drupal-project:8.x-dev /tmp/src --no-interaction
+      cp -Rf /tmp/src/* /src
+      cd /src
+      composer require drupal/devel drush/drush cweagans/composer-patches
+      composer install
+  - name: Drupal site install.
+    plugin: Drupal
+    clearCaches: false
+    subDirectory: web
+    drupalVersion: 8
+  - name: Install Drupal site.
+    plugin: Script
+    script: |
+      vendor/drush/drush/drush site-install -y --root=/var/www/html standard --db-url='mysqli://root:strongpassword@localhost/drupal'
+      chown -R www-data:www-data /src/web/sites/default/files
+  - name: Generate login link.
+    plugin: Script
+    script: |
+      vendor/drush/drush/drush uli
+  - name: Tenon.io test
+    plugin: Script
+    script: |
+      source /assets/.ENV > /dev/null 2>&1
+      curl -X POST -H Content-Type:application/x-www-form-urlencoded -H Cache-Control:no-cache -d 'url='"$BUILD_DOMAIN"'&key='"$TENON_KEY" https://tenon.io/api/ > /src/web/response.json
+      echo "View response file at $BUILD_DOMAIN/response.json"
+      RESPONSE_ID=`curl -s $BUILD_DOMAIN/response.json | sed -e 's/[{}]/''/g' | awk -v RS=',"' -F: '/^responseID/ {print $2}' | tr -d '"'`
+      echo "View Accessibility report on Tenon.io, https://tenon.io/history.php?responseID=$RESPONSE_ID"
