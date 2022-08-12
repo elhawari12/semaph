@@ -1,1 +1,6 @@
-image: proboci/ubuntu-14.04-lamp:php-7.1
+Assets:
+  - mydb.sql.gz
+  Steps:
+  - name: Say Hello
+    plugin: Shell
+    command: echo 'Hello, World!'
